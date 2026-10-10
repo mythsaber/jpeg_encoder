@@ -1,4 +1,5 @@
 #include<iostream>
+#include<string>
 #include<cstdio>
 #include<vector>
 #include<list>
@@ -12,16 +13,12 @@
 #include<assert.h>
 #include<cmath>
 #include<iterator>
-#include<opencv.hpp>
-using cv::imread;
-using cv::waitKey;
-using cv::Mat;
 using std::vector;
 using std::cout;
 using std::endl;
 
 
-//ÊäÈëµÄfrequency²»ÒªÇóÓĞĞò
+//è¾“å…¥çš„frequencyä¸è¦æ±‚æœ‰åº
 vector<int> get_depth_in_huffman_tree(const vector<int>& frequency)
 {
 	vector<int> res(frequency.size(), 1);
@@ -31,9 +28,9 @@ vector<int> get_depth_in_huffman_tree(const vector<int>& frequency)
 
 	struct node
 	{
-		int index; //index in frequency, -1±íÊ¾²»ÊÇÒ¶½Úµã
+		int index; //index in frequency, -1è¡¨ç¤ºä¸æ˜¯å¶èŠ‚ç‚¹
 		int frequency;
-		std::list<int> leaves_idx; //¸Ã½áµãÏÂµÄÒ¶½ÚµãÔÚÔ­vectorÖĞµÄË÷Òı
+		std::list<int> leaves_idx; //è¯¥ç»“ç‚¹ä¸‹çš„å¶èŠ‚ç‚¹åœ¨åŸvectorä¸­çš„ç´¢å¼•
 		node(int index_, int frequency_,std::list<int> leaves_idx_)
 			:index(index_), frequency(frequency_),leaves_idx(leaves_idx_){}
 		bool operator <(const node& rhs)
@@ -47,7 +44,7 @@ vector<int> get_depth_in_huffman_tree(const vector<int>& frequency)
 		node temp(i, frequency[i],std::list<int>());
 		medium_list.push_back(temp);
 	}
-	medium_list.sort();  //std::less<node>, left<right£¬Òò´Ë¿ÉÌá¹©³ÉÔ±º¯Êı£¬Ò²¿É·Ç³ÉÔ±º¯Êı
+	medium_list.sort();  //std::less<node>, left<rightï¼Œå› æ­¤å¯æä¾›æˆå‘˜å‡½æ•°ï¼Œä¹Ÿå¯éæˆå‘˜å‡½æ•°
 
 	while (medium_list.size()!=1)
 	{
@@ -66,7 +63,7 @@ vector<int> get_depth_in_huffman_tree(const vector<int>& frequency)
 		}
 		node father(-1,x.frequency+y.frequency,all_leaves);//new node
 
-		//ÔÚÓĞĞòÁ´±íÖĞ²åÈëÒ»¸ö½áµã
+		//åœ¨æœ‰åºé“¾è¡¨ä¸­æ’å…¥ä¸€ä¸ªç»“ç‚¹
 		auto insert_pos=std::lower_bound(medium_list.begin(), medium_list.end(), father); //std::less<node>, left<right
 		medium_list.insert(insert_pos,father);
 
@@ -85,21 +82,21 @@ void  test_get_depth_in_huffman_tree()
 	for (auto i : depth) cout << i << " "; cout << endl;
 }
 
-//Êä³övetcor<pair<±àÂë³¤¶Èn£¬±àÂë£¨16Î»ÕûÊıµÄµÍnÎ»£©>>
+//è¾“å‡ºvetcor<pair<ç¼–ç é•¿åº¦nï¼Œç¼–ç ï¼ˆ16ä½æ•´æ•°çš„ä½nä½ï¼‰>>
 vector<std::pair<int,uint16_t>> canonical_huffman_encode(const vector<int>& depth)
 {
 	if (depth.empty()) return vector<std::pair<int, uint16_t>>();
 
-	//std::tuple<ÔÚ³õÊ¼frequencyÖĞµÄË÷Òı¡¢±àÂë³¤¶È¡¢±àÂë£¨16Î»ÕûÊıµÄµÍnÎ»)
+	//std::tuple<åœ¨åˆå§‹frequencyä¸­çš„ç´¢å¼•ã€ç¼–ç é•¿åº¦ã€ç¼–ç ï¼ˆ16ä½æ•´æ•°çš„ä½nä½)
 	vector<std::tuple<int, int, uint16_t>> idx_len_code(depth.size());
 	for (unsigned i = 0; i < depth.size(); i++)
 	{
-		std::get<0>(idx_len_code[i]) = i; //std::get<>()·µ»ØÒıÓÃ
+		std::get<0>(idx_len_code[i]) = i; //std::get<>()è¿”å›å¼•ç”¨
 		std::get<1>(idx_len_code[i]) = depth[i];
 		std::get<2>(idx_len_code[i]) = 0;
 	}
 
-	//°´±àÂë³¤¶ÈÓÉĞ¡µ½´óÅÅÁĞ
+	//æŒ‰ç¼–ç é•¿åº¦ç”±å°åˆ°å¤§æ’åˆ—
 	std::sort(idx_len_code.begin(), idx_len_code.end(), 
 		[](const std::tuple<int, int, uint16_t>& lhs, const std::tuple<int, int, uint16_t>& rhs)->bool
 	{
@@ -112,7 +109,7 @@ vector<std::pair<int,uint16_t>> canonical_huffman_encode(const vector<int>& dept
 		std::get<2>(idx_len_code[i]) = (std::get<2>(idx_len_code[i - 1]) + 1) << steps;
 	}
 
-	//·µ»ØÓë³õÊ¼ÊäÈëµÄfrequency¶ÔÓ¦µÄvetcor<pair<±àÂë³¤¶Èn£¬±àÂë£¨16Î»ÕûÊıµÄµÍnÎ»>>
+	//è¿”å›ä¸åˆå§‹è¾“å…¥çš„frequencyå¯¹åº”çš„vetcor<pair<ç¼–ç é•¿åº¦nï¼Œç¼–ç ï¼ˆ16ä½æ•´æ•°çš„ä½nä½>>
 	vector<std::pair<int, uint16_t>> res(idx_len_code.size());
 	for (unsigned i = 0; i < idx_len_code.size(); i++)
 	{
@@ -134,15 +131,15 @@ void test_canonical_huffman_encode()
 		uint16_t code = std::get<1>(len_code[i]);
 
 		char str[17];
-		_itoa_s((int)code, str, 17,2);   //×ª»»³É×Ö·û´®£¬½øÖÆ»ùÊıÎª2
+		_itoa_s((int)code, str, 17,2);   //è½¬æ¢æˆå­—ç¬¦ä¸²ï¼Œè¿›åˆ¶åŸºæ•°ä¸º2
 		printf("len=%d,code=%s\n", len, str);
 	}
 
 }
 
-//ÓÉfrequency[256]µÃµ½³öÏÖ´ÎÊı²»Îª0µÄ·ûºÅµÄÆµÊı
-//vector<int>& symbolÎª·ûºÅµÄÖµ£¬uint16_t
-//vector<int>& symbol_frequencyÎª¶ÔÓ¦·ûºÅµÄÆµÊı
+//ç”±frequency[256]å¾—åˆ°å‡ºç°æ¬¡æ•°ä¸ä¸º0çš„ç¬¦å·çš„é¢‘æ•°
+//vector<int>& symbolä¸ºç¬¦å·çš„å€¼ï¼Œuint16_t
+//vector<int>& symbol_frequencyä¸ºå¯¹åº”ç¬¦å·çš„é¢‘æ•°
 void get_symbol_frequency(int* frequency, int len, vector<int>& symbol,
 	vector<int>& symbol_frequency)
 {
@@ -161,8 +158,8 @@ void get_symbol_frequency(int* frequency, int len, vector<int>& symbol,
 	}
 }
 
-//¶Ô[0,255]ÖĞµÄÃ¿Ò»¸öÊıhuffman±àÂë
-//³öÏÖ´ÎÊıÎª0µÄpair<huffman±àÂë³¤¶ÈnÎª0£¬huffman±àÂë£¨16Î»ÕûÊıµÄµÍnÎ»£©Îª0>
+//å¯¹[0,255]ä¸­çš„æ¯ä¸€ä¸ªæ•°huffmanç¼–ç 
+//å‡ºç°æ¬¡æ•°ä¸º0çš„pair<huffmanç¼–ç é•¿åº¦nä¸º0ï¼Œhuffmanç¼–ç ï¼ˆ16ä½æ•´æ•°çš„ä½nä½ï¼‰ä¸º0>
 vector<std::pair<int, uint16_t>> get_each_uint8_t_huffman(int* frequency, int len)
 {
 	assert(len == 256);
@@ -199,16 +196,16 @@ void test_get_each_uint8_t_frequency_write_huffman_table()
 		uint16_t code = huffman_table[i].second;
 
 		char str[17];
-		_itoa_s((int)code, str, 17, 2);   //×ª»»³É×Ö·û´®£¬½øÖÆ»ùÊıÎª2
+		_itoa_s((int)code, str, 17, 2);   //è½¬æ¢æˆå­—ç¬¦ä¸²ï¼Œè¿›åˆ¶åŸºæ•°ä¸º2
 		printf("i=%d: len=%d,code=%s\n", i,len, str);
 	}
 
-	//ÒªĞ´ÈëjpegÎÄ¼şµÄhuffman±íÏà¹ØÄÚÈİ
+	//è¦å†™å…¥jpegæ–‡ä»¶çš„huffmanè¡¨ç›¸å…³å†…å®¹
 	auto write_huffman = [](const vector<std::pair<int, uint16_t>>& table, std::ofstream& ofs)
 	{
 		assert(table.size() == 256);
 
-		//³¤¶ÈÎªnµÄÂë×ÖÓĞ¼¸¸ö
+		//é•¿åº¦ä¸ºnçš„ç å­—æœ‰å‡ ä¸ª
 		uint8_t nums[16] = {0};
 		for (const auto& i : table) nums[i.first]++;
 
@@ -223,7 +220,7 @@ void test_get_each_uint8_t_frequency_write_huffman_table()
 				}
 		}
 
-		//»ñÈ¡³¤¶È²»Îª0µÄÂë×ÖÓÉĞ¡µ½´óÅÅĞòºóµÄË÷Òı
+		//è·å–é•¿åº¦ä¸ä¸º0çš„ç å­—ç”±å°åˆ°å¤§æ’åºåçš„ç´¢å¼•
 		vector<uint8_t> idx(not_zerolencode_table.size());
 		for (unsigned int i = 0; i < idx.size(); i++) idx[i] = (uint8_t)i;
 		std::sort(idx.begin(), idx.end(),
@@ -253,11 +250,11 @@ void test_get_each_uint8_t_frequency_write_huffman_table()
 	write_huffman(huffman_table, ofs);
 }
 
-//½«RGB24¸ñÊ½ÏñËØÊı¾İ×ª»»ÎªYUV420P¸ñÊ½ÏñËØÊı¾İ
-//¶ÔÓ¦µÄ²ÉÑùÒò×ÓÎª£º
-//Y£ºË®Æ½²ÉÓÃÒò×Ó=2£» ´¹Ö±²ÉÑùÒò×Ó=2£»
-//V£ºË®Æ½²ÉÓÃÒò×Ó  = 1£»´¹Ö±²ÉÑùÒò×Ó = 1
-//U£ºË®Æ½²ÉÓÃÒò×Ó = 1£»´¹Ö±²ÉÑùÒò×Ó = 1
+//å°†RGB24æ ¼å¼åƒç´ æ•°æ®è½¬æ¢ä¸ºYUV420Pæ ¼å¼åƒç´ æ•°æ®
+//å¯¹åº”çš„é‡‡æ ·å› å­ä¸ºï¼š
+//Yï¼šæ°´å¹³é‡‡ç”¨å› å­=2ï¼› å‚ç›´é‡‡æ ·å› å­=2ï¼›
+//Vï¼šæ°´å¹³é‡‡ç”¨å› å­  = 1ï¼›å‚ç›´é‡‡æ ·å› å­ = 1
+//Uï¼šæ°´å¹³é‡‡ç”¨å› å­ = 1ï¼›å‚ç›´é‡‡æ ·å› å­ = 1
 void rgb24_to_yuv420P(const unsigned char *rgbbuf, int w, int h, unsigned char *yuvbuf)
 {
 	unsigned char* ptrY = yuvbuf;
@@ -276,10 +273,10 @@ void rgb24_to_yuv420P(const unsigned char *rgbbuf, int w, int h, unsigned char *
 			unsigned char y = (unsigned char)((66 * r + 129 * g + 25 * b + 128) >> 8) + 16;
 			unsigned char u = (unsigned char)((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128;
 			unsigned char v = (unsigned char)((112 * r - 94 * g - 18 * b + 128) >> 8) + 128;
-			//×ª»»ºóYµÄ·¶Î§ÊÇ[16,235]£¬UV µÄ·¶Î§ÊÇ[16,239]£¬¸ú[0,255]ºÜ½Ó½ü
+			//è½¬æ¢åYçš„èŒƒå›´æ˜¯[16,235]ï¼ŒUV çš„èŒƒå›´æ˜¯[16,239]ï¼Œè·Ÿ[0,255]å¾ˆæ¥è¿‘
 
 			ptrY[iy++] = y;
-			if ((i & 1) == 0 && (j & 1) == 0)  //±ØĞë¼Ó()£¬×¢ÒâÓÅÏÈ¼¶
+			if ((i & 1) == 0 && (j & 1) == 0)  //å¿…é¡»åŠ ()ï¼Œæ³¨æ„ä¼˜å…ˆçº§
 			{
 				ptrU[iu++] = u;
 			}
@@ -291,7 +288,7 @@ void rgb24_to_yuv420P(const unsigned char *rgbbuf, int w, int h, unsigned char *
 	}
 }
 
-//½«RGB24¸ñÊ½ÏñËØÊı¾İ×ª»»ÎªYUV411P¸ñÊ½ÏñËØÊı¾İ,w*h*1.5=w*h+w*h/4+w*h/4
+//å°†RGB24æ ¼å¼åƒç´ æ•°æ®è½¬æ¢ä¸ºYUV411Pæ ¼å¼åƒç´ æ•°æ®,w*h*1.5=w*h+w*h/4+w*h/4
 void rgb24_to_yuv411P(const unsigned char *rgbbuf, int w, int h,unsigned char *yuvbuf)
 {
 	unsigned char* ptrY = yuvbuf;
@@ -310,7 +307,7 @@ void rgb24_to_yuv411P(const unsigned char *rgbbuf, int w, int h,unsigned char *y
 			unsigned char y = (unsigned char)((66 * r + 129 * g + 25 * b + 128) >> 8) + 16;
 			unsigned char u = (unsigned char)((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128;
 			unsigned char v = (unsigned char)((112 * r - 94 * g - 18 * b + 128) >> 8) + 128;
-			//×ª»»ºóYµÄ·¶Î§ÊÇ[16,235]£¬UV µÄ·¶Î§ÊÇ[16,239]£¬¸ú[0,255]ºÜ½Ó½ü
+			//è½¬æ¢åYçš„èŒƒå›´æ˜¯[16,235]ï¼ŒUV çš„èŒƒå›´æ˜¯[16,239]ï¼Œè·Ÿ[0,255]å¾ˆæ¥è¿‘
 
 			ptrY[iy++] = y;
 			if (j % 4 == 0)
@@ -338,7 +335,7 @@ void test_rgb24_to_yuv411P()
 	ofs.write((char*)&yuvbuf[0], 640 * 360 * 3 / 2);
 }
 
-//½«Í¼ÏñµÄ³¤ºÍ¿í¶¼²¹ÎªnµÄ±¶Êı
+//å°†å›¾åƒçš„é•¿å’Œå®½éƒ½è¡¥ä¸ºnçš„å€æ•°
 void padto(vector<uint8_t>& data, int& width, int& height, int n)
 {
 	assert((n == 8) || (n == 16) | (n == 32));
@@ -385,8 +382,8 @@ void test_padto()
 	padto(data, width, height, 5);
 }
 
-//DCT ±ä»¯ĞèÒª¶¨ÒåÓò¶Ô³Æ£¬ÔÚ×ö DCT ±ä»¯Ö®Ç°ÒªÏÈ½«¾ØÕóÖĞµÄ¼õĞ¡
-//×óÒÆ 128£¬Ê¹µÃÖµÓòÂäÔÚ -128~127
+//DCT å˜åŒ–éœ€è¦å®šä¹‰åŸŸå¯¹ç§°ï¼Œåœ¨åš DCT å˜åŒ–ä¹‹å‰è¦å…ˆå°†çŸ©é˜µä¸­çš„å‡å°
+//å·¦ç§» 128ï¼Œä½¿å¾—å€¼åŸŸè½åœ¨ -128~127
 vector<int16_t> less_n_each_ele(const vector<uint8_t> val,int n)
 {
 	vector<int16_t> res(val.size());
@@ -397,7 +394,7 @@ vector<int16_t> less_n_each_ele(const vector<uint8_t> val,int n)
 	return res;
 }
 
-//¶ÔÒ»¸ö8*8µÄÊı×éDCT±ä»»
+//å¯¹ä¸€ä¸ª8*8çš„æ•°ç»„DCTå˜æ¢
 vector<int16_t> dct(const vector<int16_t>& input)
 {
 	const int N = (int)std::sqrt(input.size());
@@ -486,7 +483,7 @@ void test_dct()
 
 }
 
-//zigzag ÅÅÁĞ£¬½«ÏàËÆÆµÂÊ×éÔÚÒ»Æğ
+//zigzag æ’åˆ—ï¼Œå°†ç›¸ä¼¼é¢‘ç‡ç»„åœ¨ä¸€èµ·
 void zigzag_sort(vector<int16_t>&  x)
 {
 	assert(x.size() == 64);
@@ -539,12 +536,12 @@ void test_zigzag_sort()
 	}
 }
 
-//Á¿»¯£¬³ıÒÔÁ¿»¯±íÀï¶ÔÓ¦Öµ²¢ËÄÉáÎåÈë
+//é‡åŒ–ï¼Œé™¤ä»¥é‡åŒ–è¡¨é‡Œå¯¹åº”å€¼å¹¶å››èˆäº”å…¥
 void quantify(vector<int16_t>&  val, vector<uint8_t>&  table)
 {
 	assert(val.size() == table.size());
 
-	//Á¿»¯ºóµÄÊı¾İÓĞ¿ÉÄÜ³¬¹ı 2 byte ÓĞ·ûºÅÕûÊıµÄ´¦Àí·¶Î§.
+	//é‡åŒ–åçš„æ•°æ®æœ‰å¯èƒ½è¶…è¿‡ 2 byte æœ‰ç¬¦å·æ•´æ•°çš„å¤„ç†èŒƒå›´.
 	auto clip = [](int32_t x) ->int32_t
 	{
 		if (x > std::numeric_limits<int16_t>::max())
@@ -577,8 +574,8 @@ void test_quantify()
 	cout << temp << endl;;
 }
 
-//¶ÔAC·ÖÁ¿RLE±àÂë,Ã¿×éÊı×ÖÇ°Ò»¸ö±íÊ¾ 0 µÄÊıÁ¿µÄ±ØĞëÊÇ 4 bit, ¼´ 0~15
-//vector<std::pair<Ç°Ğø0Êı£¬µ±Ç°Öµ>>
+//å¯¹ACåˆ†é‡RLEç¼–ç ,æ¯ç»„æ•°å­—å‰ä¸€ä¸ªè¡¨ç¤º 0 çš„æ•°é‡çš„å¿…é¡»æ˜¯ 4 bit, å³ 0~15
+//vector<std::pair<å‰ç»­0æ•°ï¼Œå½“å‰å€¼>>
 vector<std::pair<uint8_t,int16_t>> rle_encode(const vector<int16_t> input,unsigned first_bitnums)
 {
 	if (input.empty()) return vector<std::pair<uint8_t, int16_t>>();
@@ -587,7 +584,7 @@ vector<std::pair<uint8_t,int16_t>> rle_encode(const vector<int16_t> input,unsign
 	const int first_max = (int)std::pow(2, first_bitnums) - 1;
 	vector<std::pair<uint8_t, int16_t>> res;
 
-	unsigned all_zero_begin_idx= input.size();//ÓÉ¸Ãidx¿ªÊ¼£¬È«Îª0
+	unsigned all_zero_begin_idx= input.size();//ç”±è¯¥idxå¼€å§‹ï¼Œå…¨ä¸º0
 	for (int i = (int)input.size()-1; i >= 0; i--)
 	{
 		if (input[i] == 0) all_zero_begin_idx = i;
@@ -614,8 +611,8 @@ vector<std::pair<uint8_t,int16_t>> rle_encode(const vector<int16_t> input,unsign
 			}
 		}
 	}
-	//EOB ÊÇÒ»¸ö½áÊø±ê¼Ç, ±íÊ¾ºóÃæ¶¼ÊÇ 0 ÁË. Êµ¼ÊÉÏ, ÎÒÃÇÓÃ (0,0) ±íÊ¾ EOB
-	//µ«ÊÇ, Èç¹ûÕâ×éÊı×Ö²»ÒÔ 0 ½áÊø, ÄÇÃ´¾Í²»ĞèÒª EOB
+	//EOB æ˜¯ä¸€ä¸ªç»“æŸæ ‡è®°, è¡¨ç¤ºåé¢éƒ½æ˜¯ 0 äº†. å®é™…ä¸Š, æˆ‘ä»¬ç”¨ (0,0) è¡¨ç¤º EOB
+	//ä½†æ˜¯, å¦‚æœè¿™ç»„æ•°å­—ä¸ä»¥ 0 ç»“æŸ, é‚£ä¹ˆå°±ä¸éœ€è¦ EOB
 	if (all_zero_begin_idx != input.size())
 	{
 		res.push_back(std::make_pair(0, 0));
@@ -643,14 +640,14 @@ void test_rle_encode()
 	for (auto& i : r2) { cout << "(" << (int)i.first << "," << i.second << ")  "; } cout << endl;
 }
 
-//¶ÔÒ»¸±Í¼ÏñµÄYÖ±Á÷·ÖÁ¿²î·Ö±àÂëDPCM
+//å¯¹ä¸€å‰¯å›¾åƒçš„Yç›´æµåˆ†é‡å·®åˆ†ç¼–ç DPCM
 vector<int16_t> y_dpcm_encode(const vector<vector<int16_t>>& blocks)
 {
 	/*
-	3¸öÑÕÉ«·ÖÁ¿µÄÖ±Á÷±äÁ¿ÊÇ·Ö¿ª½øĞĞ²î·Ö±àÂëµÄ
-	DiffÎª²î·ÖĞ£Õı±äÁ¿£¬Ò²¾ÍÊÇÖ±½Ó½âÂë³öÀ´µÄÖ±Á÷ÏµÊı¡£
-	µ«Èç¹ûµ±Ç°ÑÕÉ«·ÖÁ¿µ¥ÔªÊÇµÚÒ»¸öµ¥Ôª£¬Ôò½âÂë³öÀ´µÄ
-	Ö±Á÷ÊıÖµ¾ÍÊÇÕæÕıµÄÖ±Á÷±äÁ¿
+	3ä¸ªé¢œè‰²åˆ†é‡çš„ç›´æµå˜é‡æ˜¯åˆ†å¼€è¿›è¡Œå·®åˆ†ç¼–ç çš„
+	Diffä¸ºå·®åˆ†æ ¡æ­£å˜é‡ï¼Œä¹Ÿå°±æ˜¯ç›´æ¥è§£ç å‡ºæ¥çš„ç›´æµç³»æ•°ã€‚
+	ä½†å¦‚æœå½“å‰é¢œè‰²åˆ†é‡å•å…ƒæ˜¯ç¬¬ä¸€ä¸ªå•å…ƒï¼Œåˆ™è§£ç å‡ºæ¥çš„
+	ç›´æµæ•°å€¼å°±æ˜¯çœŸæ­£çš„ç›´æµå˜é‡
 	*/
 	assert(!blocks.empty());
 	vector<int16_t> code(blocks.size());
@@ -662,14 +659,14 @@ vector<int16_t> y_dpcm_encode(const vector<vector<int16_t>>& blocks)
 	return code;
 }
 
-//¶ÔÒ»¸±Í¼ÏñµÄUVÖ±Á÷·ÖÁ¿²î·Ö±àÂëDPCM
+//å¯¹ä¸€å‰¯å›¾åƒçš„UVç›´æµåˆ†é‡å·®åˆ†ç¼–ç DPCM
 vector<int16_t> uv_dpcm_encode(const vector<vector<int16_t>>& blocks)
 {
 	/*
-	3¸öÑÕÉ«·ÖÁ¿µÄÖ±Á÷±äÁ¿ÊÇ·Ö¿ª½øĞĞ²î·Ö±àÂëµÄ
-	DiffÎª²î·ÖĞ£Õı±äÁ¿£¬Ò²¾ÍÊÇÖ±½Ó½âÂë³öÀ´µÄÖ±Á÷ÏµÊı¡£
-	µ«Èç¹ûµ±Ç°ÑÕÉ«·ÖÁ¿µ¥ÔªÊÇµÚÒ»¸öµ¥Ôª£¬Ôò½âÂë³öÀ´µÄ
-	Ö±Á÷ÊıÖµ¾ÍÊÇÕæÕıµÄÖ±Á÷±äÁ¿
+	3ä¸ªé¢œè‰²åˆ†é‡çš„ç›´æµå˜é‡æ˜¯åˆ†å¼€è¿›è¡Œå·®åˆ†ç¼–ç çš„
+	Diffä¸ºå·®åˆ†æ ¡æ­£å˜é‡ï¼Œä¹Ÿå°±æ˜¯ç›´æ¥è§£ç å‡ºæ¥çš„ç›´æµç³»æ•°ã€‚
+	ä½†å¦‚æœå½“å‰é¢œè‰²åˆ†é‡å•å…ƒæ˜¯ç¬¬ä¸€ä¸ªå•å…ƒï¼Œåˆ™è§£ç å‡ºæ¥çš„
+	ç›´æµæ•°å€¼å°±æ˜¯çœŸæ­£çš„ç›´æµå˜é‡
 	*/
 	assert(!blocks.empty());
 	vector<int16_t> code(blocks.size());
@@ -688,8 +685,8 @@ vector<int16_t> uv_dpcm_encode(const vector<vector<int16_t>>& blocks)
 	return code;
 }
 
-//ÎªÁËÌá¸ß´¢´æĞ§ÂÊ, JPEG Àï²¢²»Ö±½Ó±£´æÊıÖµ, ¶øÊÇ½«ÊıÖµ°´Î»Êı·Ö³É 16 ×é
-//std::pair<³¤¶ÈbitÊı,°´·Ö×é±àÂëºóµÄÖµ>
+//ä¸ºäº†æé«˜å‚¨å­˜æ•ˆç‡, JPEG é‡Œå¹¶ä¸ç›´æ¥ä¿å­˜æ•°å€¼, è€Œæ˜¯å°†æ•°å€¼æŒ‰ä½æ•°åˆ†æˆ 16 ç»„
+//std::pair<é•¿åº¦bitæ•°,æŒ‰åˆ†ç»„ç¼–ç åçš„å€¼>
 std::pair<uint8_t,uint16_t> group_encode(int16_t src) 
 {
 	std::pair<uint8_t, uint16_t> res;
@@ -728,13 +725,13 @@ void test_group_encode()
 	}
 }
 
-//Á½¸öuint8_tºÏÎªÒ»¸öuint£¬¸ß 4 Î»ÊÇÇ°Ğø 0 µÄ¸öÊı, µÍ 4 Î»ÃèÊöÁËºóÃæÊı×ÖµÄÎ»Êı
+//ä¸¤ä¸ªuint8_tåˆä¸ºä¸€ä¸ªuintï¼Œé«˜ 4 ä½æ˜¯å‰ç»­ 0 çš„ä¸ªæ•°, ä½ 4 ä½æè¿°äº†åé¢æ•°å­—çš„ä½æ•°
 uint8_t merge_to_symbol(int8_t zeronum,int8_t len)
 {
 	return (zeronum << 4)+len;
 }
 
-//vector<std::pair<uint8_t·ûºÅ£¬¶ÔÖµ·Ö×é±àÂëºóµÄbitÊı£¬°´·Ö×é±àÂëºóµÄÖµ>>
+//vector<std::pair<uint8_tç¬¦å·ï¼Œå¯¹å€¼åˆ†ç»„ç¼–ç åçš„bitæ•°ï¼ŒæŒ‰åˆ†ç»„ç¼–ç åçš„å€¼>>
 vector<std::tuple<uint8_t, uint8_t, uint16_t>> get_tuple(
 	const vector<std::pair<uint8_t, int16_t>>& rle_code)
 {
@@ -744,14 +741,14 @@ vector<std::tuple<uint8_t, uint8_t, uint16_t>> get_tuple(
 		uint8_t zeronum = rle_code[i].first;
 		std::pair<uint8_t, uint16_t> group_code=group_encode(rle_code[i].second);
 		uint8_t symbol = merge_to_symbol(zeronum,group_code.first);
-		std::get<0>(tu_vec[i]) = symbol;//Ç°Ğø0Êı¼°³¤¶È×é³ÉµÄuint8_t
-		std::get<1>(tu_vec[i]) = group_code.first;//¶ÔÖµ·Ö×é±àÂëºóµÄbitÊı
-		std::get<2>(tu_vec[i]) = group_code.second;//°´·Ö×é±àÂëºóµÄÖµ
+		std::get<0>(tu_vec[i]) = symbol;//å‰ç»­0æ•°åŠé•¿åº¦ç»„æˆçš„uint8_t
+		std::get<1>(tu_vec[i]) = group_code.first;//å¯¹å€¼åˆ†ç»„ç¼–ç åçš„bitæ•°
+		std::get<2>(tu_vec[i]) = group_code.second;//æŒ‰åˆ†ç»„ç¼–ç åçš„å€¼
 	}
 	return tu_vec;
 }
 
-//frequency[256],·ûºÅi³öÏÖµÄ´ÎÊıÎªfrequency[i]
+//frequency[256],ç¬¦å·iå‡ºç°çš„æ¬¡æ•°ä¸ºfrequency[i]
 void get_each_uint8_t_frequency(int* frequency, int len,
 	const vector<std::tuple<uint8_t, uint8_t, int16_t>>& tu_vec)
 {
@@ -764,7 +761,7 @@ void get_each_uint8_t_frequency(int* frequency, int len,
 
 vector<vector<uint8_t>> get_y_blocks(const vector<uint8_t>& y_vals,int width,int height)
 {
-	int row = height / 8;//row*col¸ö8*8µÄ¿é
+	int row = height / 8;//row*colä¸ª8*8çš„å—
 	int col = width / 8;
 	vector<vector<uint8_t>> y_blocks(row*col);
 	for (int i = 0; i < row; i++)
@@ -788,9 +785,9 @@ vector<vector<uint8_t>> get_uv_blocks(const vector<uint8_t>& uv_vals, int width,
 	vector<uint8_t> u_vals(uv_vals.begin(),uv_vals.begin()+height*width/4);
 	vector<uint8_t> v_vals(uv_vals.begin() + height*width / 4, uv_vals.end());
 
-	constexpr int sh = 2; //Ë®Æ½·½ÏòÃ¿sh¸öÏñËØµã²ÉÑùÒ»¸öu»òvÖµ
-	constexpr int sv = 2; //´¹Ö±·½ÏòÃ¿sv¸öÏñËØµã²ÉÑùÒ»¸öu»òvÖµ
-	const int row = height / sh / 8; //ÓĞrow*col¸öblock
+	constexpr int sh = 2; //æ°´å¹³æ–¹å‘æ¯shä¸ªåƒç´ ç‚¹é‡‡æ ·ä¸€ä¸ªuæˆ–vå€¼
+	constexpr int sv = 2; //å‚ç›´æ–¹å‘æ¯svä¸ªåƒç´ ç‚¹é‡‡æ ·ä¸€ä¸ªuæˆ–vå€¼
+	const int row = height / sh / 8; //æœ‰row*colä¸ªblock
 	const int col = width / sv / 8;
 
 	auto func = [row,col](const vector<uint8_t>& u_or_v_vals, int width, int height)
@@ -802,7 +799,7 @@ vector<vector<uint8_t>> get_uv_blocks(const vector<uint8_t>& uv_vals, int width,
 			for (int j = 0; j < col; j++)
 			{
 				vector<uint8_t> block(8 * 8);
-				//µ±Ç°blockÊ×ÔªËØÔÚÈİÆ÷u_or_v_valsÖĞµÄË÷Òı
+				//å½“å‰blocké¦–å…ƒç´ åœ¨å®¹å™¨u_or_v_valsä¸­çš„ç´¢å¼•
 				for (int k = 0; k < 8; k++)
 				{
 					const uint8_t* src = &u_or_v_vals[i*col * 64 + j * 8];
@@ -882,7 +879,7 @@ void test_get_y_blocks_get_uv_blocks()
 void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_path)
 {
 	padto(rgbdata, width, height, 16);
-	vector<uint8_t> yvubuf(width*height*3/2);  //ÏÈ´æ·ÅYÔÙ´æ·ÅVÔÙ´æ·ÅU
+	vector<uint8_t> yvubuf(width*height*3/2);  //å…ˆå­˜æ”¾Yå†å­˜æ”¾Vå†å­˜æ”¾U
 	rgb24_to_yuv420P(&rgbdata[0], width, height, &yvubuf[0]);
 
 	if (false)
@@ -895,7 +892,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 	}
 
 	vector<uint8_t> y_vals(yvubuf.begin(), yvubuf.begin()+ width*height);
-	//vector vu_valsµÄÇ°Ò»°ëÔªËØÎªvÖµ£¬ºóÒ»°ëÔªËØÎªuÖµ
+	//vector vu_valsçš„å‰ä¸€åŠå…ƒç´ ä¸ºvå€¼ï¼Œåä¸€åŠå…ƒç´ ä¸ºuå€¼
 	vector<uint8_t> vu_vals(yvubuf.begin() + width*height, yvubuf.end());
 	assert(y_vals.size() == width*height);
 	assert(vu_vals.size() == width*height / 2);
@@ -929,7 +926,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 			show_block(i); 
 			cout << endl;
 		}
-		cout << "---------------------------------------u¡¢v:------------------------------" << endl;
+		cout << "---------------------------------------uã€v:------------------------------" << endl;
 		for (const auto& i : uv_blocks_less_128)
 		{
 			show_block(i);
@@ -965,7 +962,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 			show_block(i);
 			cout << endl;
 		}
-		cout << "---------------------------------------u¡¢v blocks_dct:------------------------------" << endl;
+		cout << "---------------------------------------uã€v blocks_dct:------------------------------" << endl;
 		for (const auto& i : uv_blocks_dct)
 		{
 			show_block(i);
@@ -999,7 +996,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 			show_block(i);
 			cout << endl;
 		}
-		cout << "---------------------------------------u¡¢v blocks_dct after zigzag:-------------------------" << endl;
+		cout << "---------------------------------------uã€v blocks_dct after zigzag:-------------------------" << endl;
 		for (const auto& i : uv_blocks_dct)
 		{
 			show_block(i);
@@ -1007,7 +1004,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 		}
 	}
 
-	//Á¿»¯
+	//é‡åŒ–
 
 #if 0
 	vector<uint8_t> q_table_y{
@@ -1074,7 +1071,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 			show_block(i);
 			cout << endl;
 		}
-		cout << "---------------------------------------u¡¢v blocks_dct after quan:-------------------------" << endl;
+		cout << "---------------------------------------uã€v blocks_dct after quan:-------------------------" << endl;
 		for (const auto& i : uv_blocks_dct)
 		{
 			show_block(i);
@@ -1082,7 +1079,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 		}
 	}
 
-	//¶Ô½»Á÷·ÖÁ¿RLE(ÓÎ³Ì±àÂë)
+	//å¯¹äº¤æµåˆ†é‡RLE(æ¸¸ç¨‹ç¼–ç )
 	vector<vector<std::pair<uint8_t, int16_t>>> y_ac_rle_code(y_blocks_dct.size());
 	for (unsigned int i = 0; i < y_ac_rle_code.size(); i++)
 	{
@@ -1106,13 +1103,13 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 			}
 			cout << endl;
 		};
-		cout << "---------------------------------------y ½»Á÷ ÓÎ³Ì±àÂërle:----------------------" << endl;
+		cout << "---------------------------------------y äº¤æµ æ¸¸ç¨‹ç¼–ç rle:----------------------" << endl;
 		for (const auto& i : y_ac_rle_code)
 		{
 			show_block_rle(i);
 			cout << endl;
 		}
-		cout << "---------------------------------------uv  ½»Á÷ ÓÎ³Ì±àÂërle:--------------------" << endl;
+		cout << "---------------------------------------uv  äº¤æµ æ¸¸ç¨‹ç¼–ç rle:--------------------" << endl;
 		for (const auto& i : uv_ac_rle_code)
 		{
 			show_block_rle(i);
@@ -1120,7 +1117,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 		}
 	}
 
-	//¶ÔÖ±Á÷·ÖÁ¿²î·Ö±àÂë
+	//å¯¹ç›´æµåˆ†é‡å·®åˆ†ç¼–ç 
 	vector<int16_t> y_dc_dpcm_code = y_dpcm_encode(y_blocks_dct);
 	vector<int16_t> uv_dc_dpcm_code = uv_dpcm_encode(uv_blocks_dct);
 	if (true)
@@ -1134,15 +1131,15 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 			}
 			cout << endl;
 		};
-		cout << "---------------------------------------y Ö±Á÷ ²î·Ö±àÂë:----------------------" << endl;
+		cout << "---------------------------------------y ç›´æµ å·®åˆ†ç¼–ç :----------------------" << endl;
 		show_block_dpcm(y_dc_dpcm_code);
 		cout << endl;
-		cout << "--------------------------------------uv  Ö±Á÷ ²î·Ö±àÂë:--------------------" << endl;
+		cout << "--------------------------------------uv  ç›´æµ å·®åˆ†ç¼–ç :--------------------" << endl;
 		show_block_dpcm(uv_dc_dpcm_code);
 		cout << endl << endl;
 	}
 
-	//¶ÔÖ±Á÷·ÖÁ¿·Ö×é£¬std::pair<³¤¶ÈbitÊı,°´·Ö×é±àÂëºóµÄÖµ>
+	//å¯¹ç›´æµåˆ†é‡åˆ†ç»„ï¼Œstd::pair<é•¿åº¦bitæ•°,æŒ‰åˆ†ç»„ç¼–ç åçš„å€¼>
 	vector<std::pair<uint8_t, uint16_t>> y_dc_group_code(y_dc_dpcm_code.size());
 	for (unsigned int i = 0; i < y_dc_group_code.size(); i++)
 	{
@@ -1154,31 +1151,31 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 		uv_dc_group_code[i] = group_encode(uv_dc_dpcm_code[i]);
 	}
 
-	//Ò»ÕÅÍ¼Æ¬Y dc·ÖÁ¿·Ö×é±àÂëºóÂë×Ö³¤¶ÈµÄÆµÊı
+	//ä¸€å¼ å›¾ç‰‡Y dcåˆ†é‡åˆ†ç»„ç¼–ç åç å­—é•¿åº¦çš„é¢‘æ•°
 	const int potential_symbol_num = 256;
-	int y_dc_frequency[potential_symbol_num] = { 0 };//ËùÓĞ¿ÉÄÜµÄÂë×Ö³¤¶ÈÎª0¡¢1¡¢2¡­¡­15
+	int y_dc_frequency[potential_symbol_num] = { 0 };//æ‰€æœ‰å¯èƒ½çš„ç å­—é•¿åº¦ä¸º0ã€1ã€2â€¦â€¦15
 	for (const auto& i : y_dc_group_code)
 	{
 		y_dc_frequency[i.first]++;
 	}
-	//Y dc·ÖÁ¿µÄ·ûºÅÊı
+	//Y dcåˆ†é‡çš„ç¬¦å·æ•°
 	const int y_dc_symbol_num = std::accumulate(y_dc_frequency, 
 		y_dc_frequency + potential_symbol_num, 0,
 		[](int own, int cur) {return own + (cur == 0 ? 0 : 1); });
 
-	//Ò»ÕÅÍ¼Æ¬UV dc·ÖÁ¿·Ö×é±àÂëºóÂë×Ö³¤¶ÈµÄÆµÊı
+	//ä¸€å¼ å›¾ç‰‡UV dcåˆ†é‡åˆ†ç»„ç¼–ç åç å­—é•¿åº¦çš„é¢‘æ•°
 	int uv_dc_frequency[potential_symbol_num] = { 0 };
 	for (const auto& i : uv_dc_group_code)
 	{
 		uv_dc_frequency[i.first]++;
 	}
-	//UV dc·ÖÁ¿µÄ·ûºÅÊı
+	//UV dcåˆ†é‡çš„ç¬¦å·æ•°
 	const int uv_dc_symbol_num = std::accumulate(uv_dc_frequency, uv_dc_frequency + potential_symbol_num, 0,
 		[](int own, int cur) {return own + (cur == 0 ? 0 : 1); });
 
-	//ÎªÒ»ÕÅÍ¼Æ¬Éú³ÉY·ÖÁ¿¡¢UV·ÖÁ¿Ö±Á÷huffman±í£¬ÓÃÓÚÓÉuint8_t²é¿´ÆähuffmanÂë×Ö
-	//¶Ô[0,255]ÖĞµÄÃ¿Ò»¸öÊıhuffman±àÂë
-	//³öÏÖ´ÎÊıÎª0µÄpair<huffman±àÂë³¤¶ÈnÎª0£¬huffman±àÂë£¨16Î»ÕûÊıµÄµÍnÎ»£©Îª0>
+	//ä¸ºä¸€å¼ å›¾ç‰‡ç”ŸæˆYåˆ†é‡ã€UVåˆ†é‡ç›´æµhuffmanè¡¨ï¼Œç”¨äºç”±uint8_tæŸ¥çœ‹å…¶huffmanç å­—
+	//å¯¹[0,255]ä¸­çš„æ¯ä¸€ä¸ªæ•°huffmanç¼–ç 
+	//å‡ºç°æ¬¡æ•°ä¸º0çš„pair<huffmanç¼–ç é•¿åº¦nä¸º0ï¼Œhuffmanç¼–ç ï¼ˆ16ä½æ•´æ•°çš„ä½nä½ï¼‰ä¸º0>
 	vector<std::pair<int, uint16_t>> y_dc_each_uint8_t_huffman_code =
 		get_each_uint8_t_huffman(y_dc_frequency, potential_symbol_num);
 	if (true)
@@ -1191,7 +1188,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 
 		for (const auto& i : y_dc_each_uint8_t_huffman_code)
 		{
-			if (i.first != 0) printf("(±àÂë³¤¶È£¬Âë×Ö)£º(%d,%d)\n", i.first, i.second);
+			if (i.first != 0) printf("(ç¼–ç é•¿åº¦ï¼Œç å­—)ï¼š(%d,%d)\n", i.first, i.second);
 		}
 		cout << endl;
 	}
@@ -1199,7 +1196,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 		get_each_uint8_t_huffman(uv_dc_frequency, potential_symbol_num);
 
 
-	//ÓÉÃ¿¸öblockÉú³ÉÒ»¸övector<std::tuple<uint8_t·ûºÅ£¬¶ÔÖµ·Ö×é±àÂëºóµÄbitÊı£¬°´·Ö×é±àÂëºóµÄÖµ>>
+	//ç”±æ¯ä¸ªblockç”Ÿæˆä¸€ä¸ªvector<std::tuple<uint8_tç¬¦å·ï¼Œå¯¹å€¼åˆ†ç»„ç¼–ç åçš„bitæ•°ï¼ŒæŒ‰åˆ†ç»„ç¼–ç åçš„å€¼>>
 	vector<vector<std::tuple<uint8_t, uint8_t, uint16_t>>> y_ac_symbol_bitnums_groupcode;
 	y_ac_symbol_bitnums_groupcode.resize(y_ac_rle_code.size());
 	for (unsigned int i = 0; i < y_ac_symbol_bitnums_groupcode.size(); i++)
@@ -1224,13 +1221,13 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 			}
 			cout << endl;
 		};
-		cout << "---------------------------------------y ½»Á÷ÓÎ³Ì±àÂë+·Ö×é±àÂëÔÙºÏ²¢:----------------------" << endl;
+		cout << "---------------------------------------y äº¤æµæ¸¸ç¨‹ç¼–ç +åˆ†ç»„ç¼–ç å†åˆå¹¶:----------------------" << endl;
 		for (const auto& bk : y_ac_symbol_bitnums_groupcode)
 		{
 			show_block_symbol_bitnums_groupcode(bk);
 		}
 		cout << endl;
-		cout << "--------------------------------------uv ½»Á÷ÓÎ³Ì±àÂë+·Ö×é±àÂëÔÙºÏ²¢:--------------------" << endl;
+		cout << "--------------------------------------uv äº¤æµæ¸¸ç¨‹ç¼–ç +åˆ†ç»„ç¼–ç å†åˆå¹¶:--------------------" << endl;
 		for (const auto& bk : uv_ac_symbol_bitnums_groupcode)
 		{
 			show_block_symbol_bitnums_groupcode(bk);
@@ -1238,7 +1235,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 		cout << endl << endl;
 	}
 
-	//Ò»ÕÅÍ¼Æ¬Y ac·ÖÁ¿µÄÆµÂÊ
+	//ä¸€å¼ å›¾ç‰‡Y acåˆ†é‡çš„é¢‘ç‡
 	int y_ac_frequency[potential_symbol_num] = {0};
 	for (const auto& i: y_ac_symbol_bitnums_groupcode)
 	{
@@ -1247,7 +1244,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 			y_ac_frequency[std::get<0>(j)]++;
 		}
 	}
-	//Ò»ÕÅÍ¼Æ¬UV ac·ÖÁ¿µÄÆµÂÊ
+	//ä¸€å¼ å›¾ç‰‡UV acåˆ†é‡çš„é¢‘ç‡
 	int uv_ac_frequency[potential_symbol_num] = { 0 };
 	for (const auto& i : uv_ac_symbol_bitnums_groupcode)
 	{
@@ -1257,16 +1254,16 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 		}
 	}
 	
-	//Y ac·ÖÁ¿µÄ·ûºÅÊı
+	//Y acåˆ†é‡çš„ç¬¦å·æ•°
 	const int y_ac_symbol_num = std::accumulate(y_ac_frequency, y_ac_frequency + potential_symbol_num, 0,
 		[](int own, int cur) {return own + (cur == 0 ? 0 : 1); });
-	//UV ac·ÖÁ¿µÄ·ûºÅÊı
+	//UV acåˆ†é‡çš„ç¬¦å·æ•°
 	const int uv_ac_symbol_num = std::accumulate(uv_ac_frequency, uv_ac_frequency + potential_symbol_num, 0,
 		[](int own, int cur) {return own + (cur == 0 ? 0 : 1); });
 
-	//ÎªÒ»ÕÅÍ¼Æ¬Éú³ÉY·ÖÁ¿¡¢UV·ÖÁ¿½»Á÷huffman±í£¬ÓÃÓÚÓÉuint8_t²é¿´ÆähuffmanÂë×Ö
-	//¶Ô[0,255]ÖĞµÄÃ¿Ò»¸öÊıhuffman±àÂë
-   //³öÏÖ´ÎÊıÎª0µÄpair<huffman±àÂë³¤¶ÈnÎª0£¬huffman±àÂë£¨16Î»ÕûÊıµÄµÍnÎ»£©Îª0>
+	//ä¸ºä¸€å¼ å›¾ç‰‡ç”ŸæˆYåˆ†é‡ã€UVåˆ†é‡äº¤æµhuffmanè¡¨ï¼Œç”¨äºç”±uint8_tæŸ¥çœ‹å…¶huffmanç å­—
+	//å¯¹[0,255]ä¸­çš„æ¯ä¸€ä¸ªæ•°huffmanç¼–ç 
+   //å‡ºç°æ¬¡æ•°ä¸º0çš„pair<huffmanç¼–ç é•¿åº¦nä¸º0ï¼Œhuffmanç¼–ç ï¼ˆ16ä½æ•´æ•°çš„ä½nä½ï¼‰ä¸º0>
 	vector<std::pair<int, uint16_t>> y_ac_each_uint8_t_huffman_code =
 		get_each_uint8_t_huffman(y_ac_frequency, potential_symbol_num);
 	if (true)
@@ -1279,7 +1276,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 
 		for (const auto& i : y_ac_each_uint8_t_huffman_code)
 		{
-			if (i.first != 0) printf("(±àÂë³¤¶È£¬Âë×Ö)£º(%d,%d)\n",i.first,i.second);
+			if (i.first != 0) printf("(ç¼–ç é•¿åº¦ï¼Œç å­—)ï¼š(%d,%d)\n",i.first,i.second);
 		}
 		cout << endl;
 	}
@@ -1290,7 +1287,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 	{
 		assert(table.size() == 256);
 
-		//³¤¶ÈÎªnµÄÂë×ÖÓĞ¼¸¸ö
+		//é•¿åº¦ä¸ºnçš„ç å­—æœ‰å‡ ä¸ª
 		uint8_t nums[16] = { 0 };
 		for (const auto& i : table)
 		{
@@ -1301,7 +1298,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 		}
 		if (true)
 		{
-			cout << "³¤ÎªiµÄÂë×ÖÓĞ:" << endl;
+			cout << "é•¿ä¸ºiçš„ç å­—æœ‰:" << endl;
 			for (auto i : nums)
 			{
 				cout << (int)i << " ";
@@ -1321,7 +1318,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 			}
 		}
 
-		//»ñÈ¡³¤¶È²»Îª0µÄÂë×ÖÓÉĞ¡µ½´óÅÅĞòºóµÄË÷Òı
+		//è·å–é•¿åº¦ä¸ä¸º0çš„ç å­—ç”±å°åˆ°å¤§æ’åºåçš„ç´¢å¼•
 		vector<uint8_t> idx(not_zerolencode_table.size());
 		for (unsigned int i = 0; i < idx.size(); i++) idx[i] = (uint8_t)i;
 		std::sort(idx.begin(), idx.end(),
@@ -1345,7 +1342,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 	};
 	auto write16=[](uint16_t val, std::ofstream& ofs)
 	{
-		//¶ËÄ£Ê½£º¸ß×Ö½ÚÔÚÇ°, µÍ×Ö½ÚÔÚºó
+		//ç«¯æ¨¡å¼ï¼šé«˜å­—èŠ‚åœ¨å‰, ä½å­—èŠ‚åœ¨å
 		uint8_t high = (uint8_t)(val >> 8);
 		uint8_t low = (uint8_t)(val);
 		ofs << high << low;
@@ -1358,15 +1355,15 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 	uint8_t buf = 0, off = 0;
 	auto write_bit = [write, &buf, &off](bool d, std::ofstream& ofs)
 	{
-		//½«buf×Ö½ÚµÄoffÎ»ÖÃÎª1£¨dÎªtrueÊ±£©»ò0£¬¸ÃÎ»Ö®Ç°Îª0
+		//å°†bufå­—èŠ‚çš„offä½ç½®ä¸º1ï¼ˆdä¸ºtrueæ—¶ï¼‰æˆ–0ï¼Œè¯¥ä½ä¹‹å‰ä¸º0
 		buf |= ((uint8_t)d) << (7 - off);
 		if (++off == 8)
 		{
 			/*
-			ÔÚ´¦Àí JPG ÎÄ¼şÊ±, Èç¹ûÄãÅöµ½Ò»¸ö 0xFF, ¶øËüºóÃæµÄ×Ö½Ú²»ÊÇ 0, ²¢ÇÒÕâ¸ö×Ö½Ú
-			Ã»ÓĞÒâÒå. ÄÇÃ´ÄãÓöµ½µÄ 0xFF ×Ö½Ú±ØĞë±»ºöÂÔ. (Ò»Ğ© JPG Àï, ³£ÓÃÓÃ 0xFF ×öÄ³
-			Ğ©Ìî³äÓÃÍ¾) Èç¹ûÄãÔÚ×ö huffman ±àÂëÊ±ÅöÇÉ²úÉúÁËÒ»¸ö 0xFF, ÄÇÃ´¾ÍÓÃ 0xFF 
-			0x00 ´úÌæ. ¾ÍÊÇËµÔÚ jpeg Í¼ĞÎ½âÂëÊ±Åöµ½ FF00 ¾Í°ÑËüµ±×÷ FF ´¦Àí
+			åœ¨å¤„ç† JPG æ–‡ä»¶æ—¶, å¦‚æœä½ ç¢°åˆ°ä¸€ä¸ª 0xFF, è€Œå®ƒåé¢çš„å­—èŠ‚ä¸æ˜¯ 0, å¹¶ä¸”è¿™ä¸ªå­—èŠ‚
+			æ²¡æœ‰æ„ä¹‰. é‚£ä¹ˆä½ é‡åˆ°çš„ 0xFF å­—èŠ‚å¿…é¡»è¢«å¿½ç•¥. (ä¸€äº› JPG é‡Œ, å¸¸ç”¨ç”¨ 0xFF åšæŸ
+			äº›å¡«å……ç”¨é€”) å¦‚æœä½ åœ¨åš huffman ç¼–ç æ—¶ç¢°å·§äº§ç”Ÿäº†ä¸€ä¸ª 0xFF, é‚£ä¹ˆå°±ç”¨ 0xFF 
+			0x00 ä»£æ›¿. å°±æ˜¯è¯´åœ¨ jpeg å›¾å½¢è§£ç æ—¶ç¢°åˆ° FF00 å°±æŠŠå®ƒå½“ä½œ FF å¤„ç†
 			*/
 			if (buf == 0xFF)
 			{
@@ -1381,28 +1378,28 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 	};
 	auto write_bits = [write_bit](std::uint16_t d, int s, std::ofstream& ofs) 
 	{ 
-		//½«uint16_t dµÄµÍsÎ»bitĞ´Èëofs
+		//å°†uint16_t dçš„ä½sä½bitå†™å…¥ofs
 		for (int i = 0; i < s; ++i) 
 			write_bit((d & (1 << (s - i - 1)))!=0,ofs); 
 	};
 
 	auto write_a_block = [write_bits](
-		std::pair<uint8_t, uint16_t> dc_group_code, //Ö±Á÷·ÖÁ¿
-		vector<std::pair<int, uint16_t>>& dc_each_uint8_t_huffman_code, //Ö±Á÷huffman±í
+		std::pair<uint8_t, uint16_t> dc_group_code, //ç›´æµåˆ†é‡
+		vector<std::pair<int, uint16_t>>& dc_each_uint8_t_huffman_code, //ç›´æµhuffmanè¡¨
 		const vector<std::tuple<uint8_t, uint8_t, uint16_t>>& ac_symbol_bitnums_groupcode,
-		const vector<std::pair<int, uint16_t>>& ac_each_uint8_t_huffman_code,  //½»Á÷huffman±í
+		const vector<std::pair<int, uint16_t>>& ac_each_uint8_t_huffman_code,  //äº¤æµhuffmanè¡¨
 		std::ofstream& ofs)
 	{
 		cout << "write_a_block():" << endl;
 
-		//¶ÔÖ±Á÷·ÖÁ¿µÄ±íÊ¾Îª£ºstd::pair<³¤¶ÈbitÊı,°´·Ö×é±àÂëºóµÄÖµ>
+		//å¯¹ç›´æµåˆ†é‡çš„è¡¨ç¤ºä¸ºï¼šstd::pair<é•¿åº¦bitæ•°,æŒ‰åˆ†ç»„ç¼–ç åçš„å€¼>
 		std::pair<int, uint16_t > hufCode = dc_each_uint8_t_huffman_code[dc_group_code.first];
-		write_bits(hufCode.second,hufCode.first,ofs);  //RLE³¤¶È·ÖÁ¿µÄhuffman±àÂë
-		write_bits(dc_group_code.second,dc_group_code.first,ofs);  //RLEµÄÂëÖµ·ÖÁ¿
-		printf("Ö±Á÷·ÖÁ¿µÄ·Ö×é±àÂëÎª(³¤¶È=%d£¬ÂëÖµ=%d),  ÔÙ¶Ô³¤¶È·ÖÁ¿huffman±àÂë(³¤¶È=%d, ÂëÖµ=%d) \n",
+		write_bits(hufCode.second,hufCode.first,ofs);  //RLEé•¿åº¦åˆ†é‡çš„huffmanç¼–ç 
+		write_bits(dc_group_code.second,dc_group_code.first,ofs);  //RLEçš„ç å€¼åˆ†é‡
+		printf("ç›´æµåˆ†é‡çš„åˆ†ç»„ç¼–ç ä¸º(é•¿åº¦=%dï¼Œç å€¼=%d),  å†å¯¹é•¿åº¦åˆ†é‡huffmanç¼–ç (é•¿åº¦=%d, ç å€¼=%d) \n",
 			(int)dc_group_code.first, (int)dc_group_code.second, hufCode.first, (int)hufCode.second);
 
-		//¶Ô½»Á÷·ÖÁ¿µÄ±íÊ¾Îª£ºvector<std::tuple<uint8_t·ûºÅ£¬¶ÔÖµ·Ö×é±àÂëºóµÄbitÊı£¬°´·Ö×é±àÂëºóµÄÖµ>>
+		//å¯¹äº¤æµåˆ†é‡çš„è¡¨ç¤ºä¸ºï¼švector<std::tuple<uint8_tç¬¦å·ï¼Œå¯¹å€¼åˆ†ç»„ç¼–ç åçš„bitæ•°ï¼ŒæŒ‰åˆ†ç»„ç¼–ç åçš„å€¼>>
 		for (unsigned int i = 0; i < ac_symbol_bitnums_groupcode.size(); i++)
 		{
 			uint8_t symbol = std::get<0>(ac_symbol_bitnums_groupcode[i]);
@@ -1411,82 +1408,82 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 
 			std::pair<int, uint16_t > hufcode = ac_each_uint8_t_huffman_code[symbol];
 
-			write_bits(hufcode.second,hufcode.first,ofs);  //RLEÇ°Ğø0Êı+µ±Ç°ÖµµÃ·Ö×é±àÂë³¤¶È¹¹³ÉµÄ×Ö½ÚµÄhuffman
+			write_bits(hufcode.second,hufcode.first,ofs);  //RLEå‰ç»­0æ•°+å½“å‰å€¼å¾—åˆ†ç»„ç¼–ç é•¿åº¦æ„æˆçš„å­—èŠ‚çš„huffman
 			
-			write_bits(groupcode, bitnums,ofs);   //µ±Ç°ÖµµÃ·Ö×é±àÂëÖµ
+			write_bits(groupcode, bitnums,ofs);   //å½“å‰å€¼å¾—åˆ†ç»„ç¼–ç å€¼
 
-			printf("½»Á÷·ÖÁ¿µÄRLEÇ°Ğø0Êı+µ±Ç°ÖµµÃ·Ö×é±àÂë³¤¶È¹¹³ÉµÄ×Ö½ÚµÄhuffman±àÂëÎª(³¤¶È=%d£¬ÂëÖµ=%d),  "
-				"µ±Ç°Öµ·Ö×é±àÂëÎª(³¤¶È=%d, ÂëÖµ=%d) \n", (int)hufcode.first, (int)hufcode.second, (int)bitnums, (int)groupcode);
+			printf("äº¤æµåˆ†é‡çš„RLEå‰ç»­0æ•°+å½“å‰å€¼å¾—åˆ†ç»„ç¼–ç é•¿åº¦æ„æˆçš„å­—èŠ‚çš„huffmanç¼–ç ä¸º(é•¿åº¦=%dï¼Œç å€¼=%d),  "
+				"å½“å‰å€¼åˆ†ç»„ç¼–ç ä¸º(é•¿åº¦=%d, ç å€¼=%d) \n", (int)hufcode.first, (int)hufcode.second, (int)bitnums, (int)groupcode);
 			
-			//×¢Òâ£º¶ÔÓÚÓÎ³Ì±àÂëºóµÄEOB¼´(0,0)£¬µÚÒ»¸ö0ÎªÇ°Ğø0Êı£¬µÚ¶ş¸ö0µÄ·Ö×é±àÂëÎª(³¤¶È=0,ÂëÖµ0)£¬ËùÒÔ
-			//×é³ÉµÄ×Ö½Ú·ûºÅÎª0£¬ÂëÖµÎª0£¬Ğ´ÈëÎÄ¼şÊ±£¬»áĞ´Èë×Ö½Ú·ûºÅ0µÄhuffman±àÂë£¬ÂëÖµ0Ôò²»Ğ´Èë
+			//æ³¨æ„ï¼šå¯¹äºæ¸¸ç¨‹ç¼–ç åçš„EOBå³(0,0)ï¼Œç¬¬ä¸€ä¸ª0ä¸ºå‰ç»­0æ•°ï¼Œç¬¬äºŒä¸ª0çš„åˆ†ç»„ç¼–ç ä¸º(é•¿åº¦=0,ç å€¼0)ï¼Œæ‰€ä»¥
+			//ç»„æˆçš„å­—èŠ‚ç¬¦å·ä¸º0ï¼Œç å€¼ä¸º0ï¼Œå†™å…¥æ–‡ä»¶æ—¶ï¼Œä¼šå†™å…¥å­—èŠ‚ç¬¦å·0çš„huffmanç¼–ç ï¼Œç å€¼0åˆ™ä¸å†™å…¥
 		}
 	};
 
-	//¿ªÊ¼ÏòÎÄ¼şĞ´ÄÚÈİ
+	//å¼€å§‹å‘æ–‡ä»¶å†™å†…å®¹
 	std::ofstream ofs(dst_path, std::ios::binary);
 	if (!ofs) { cout << "Couldn't open" << dst_path << endl; return; }
-	write_marker(0xD8,ofs); //Í¼Æ¬¿ªÊ¼
+	write_marker(0xD8,ofs); //å›¾ç‰‡å¼€å§‹
 
 	write_marker(0xE0,ofs);
 	write16(16,ofs);
 	write({ 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01 }, ofs);
 	write({0x00,0x00, 0x01, 0x00, 0x01, 0x00, 0x00 },ofs);
 
-	write_marker(0xDB, ofs); //YÁ¿»¯±í
+	write_marker(0xDB, ofs); //Yé‡åŒ–è¡¨
 	write16(67, ofs); 
 	write({0x00},ofs);
 	write(std::initializer_list<uint8_t>(&q_table_y[0], &q_table_y[q_table_y.size()-1]+1), ofs);
-	write_marker(0xDB, ofs);//UVÁ¿»¯±í
+	write_marker(0xDB, ofs);//UVé‡åŒ–è¡¨
 	 write16(67, ofs); 
 	 write({ 0x01 }, ofs);	
 	write(std::initializer_list<uint8_t>(&q_table_uv[0], &q_table_uv[q_table_uv.size() - 1]+1), ofs);
 	
-	write_marker(0xC0,ofs); //Ö¡Í¼Ïñ¿ªÊ¼
+	write_marker(0xC0,ofs); //å¸§å›¾åƒå¼€å§‹
 	write({ 0x00, 0x11, 0x08 },ofs); 
 	write16(height,ofs);
 	write16(width, ofs);
 	write({ 0x03}, ofs);
-	//ÑÕÉ«·ÖÁ¿ID¡¢Ë®Æ½´¹Ö±²ÉÑùÒò×Ó¡¢Á¿»¯±íID
+	//é¢œè‰²åˆ†é‡IDã€æ°´å¹³å‚ç›´é‡‡æ ·å› å­ã€é‡åŒ–è¡¨ID
 	write({0x00, 0x22, 0x00, 0x01, 0x11, 0x01, 0x02, 0x11, 0x01 },ofs);
-	//ÔÚÒ»¸ö2x2ÏñËØµÄÍ¼Ïñ¿éÖĞ£¬YÖğµã²ÉÑù£¬U, V·Ö±ğÊÇ²ÉÑùÒ»µã¡£ÄÇÃ´Èı¸ö·ÖÁ¿µÄ²ÉÑùÒò×Ó¼ÇÎª£º
-	//	Y£ºSHY = 2£» SVY = 2£»
-	//	U£ºSHU = 1£»SVU = 1£º
-	//	SHV = 1£» SVV = 1
+	//åœ¨ä¸€ä¸ª2x2åƒç´ çš„å›¾åƒå—ä¸­ï¼ŒYé€ç‚¹é‡‡æ ·ï¼ŒU, Våˆ†åˆ«æ˜¯é‡‡æ ·ä¸€ç‚¹ã€‚é‚£ä¹ˆä¸‰ä¸ªåˆ†é‡çš„é‡‡æ ·å› å­è®°ä¸ºï¼š
+	//	Yï¼šSHY = 2ï¼› SVY = 2ï¼›
+	//	Uï¼šSHU = 1ï¼›SVU = 1ï¼š
+	//	SHV = 1ï¼› SVV = 1
 
-	write_marker(0xC4,ofs );//¹ş·òÂü±í--Ö±Á÷µÄ0ºÅ±í£¬Y·ÖÁ¿
+	write_marker(0xC4,ofs );//å“ˆå¤«æ›¼è¡¨--ç›´æµçš„0å·è¡¨ï¼ŒYåˆ†é‡
 	write16(2+1+16+ y_dc_symbol_num, ofs);
-	write({0x00}, ofs); //Ö±Á÷ºÍ½»Á÷·Ö¿ª±àID
+	write({0x00}, ofs); //ç›´æµå’Œäº¤æµåˆ†å¼€ç¼–ID
 	write_huffman_table(y_dc_each_uint8_t_huffman_code, ofs);
 	
-	write_marker(0xC4, ofs);//¹ş·òÂü±í--½»Á÷µÄ0ºÅ±í£¬Y·ÖÁ¿
+	write_marker(0xC4, ofs);//å“ˆå¤«æ›¼è¡¨--äº¤æµçš„0å·è¡¨ï¼ŒYåˆ†é‡
 	write16(2 + 1 + 16 + y_ac_symbol_num, ofs);
 	write({ 0x10 }, ofs);
 	write_huffman_table(y_ac_each_uint8_t_huffman_code, ofs);
 
-	write_marker(0xC4, ofs);//¹ş·òÂü±í--Ö±Á÷µÄ1ºÅ±í£¬UV·ÖÁ¿
+	write_marker(0xC4, ofs);//å“ˆå¤«æ›¼è¡¨--ç›´æµçš„1å·è¡¨ï¼ŒUVåˆ†é‡
 	write16(2 + 1 + 16 + uv_dc_symbol_num, ofs);
 	write({ 0x01 }, ofs);
 	write_huffman_table(uv_dc_each_uint8_t_huffman_code, ofs);
 	
-	write_marker(0xC4, ofs);//¹ş·òÂü±í--½»Á÷µÄÎª1ºÅ±í£¬UV·ÖÁ¿
+	write_marker(0xC4, ofs);//å“ˆå¤«æ›¼è¡¨--äº¤æµçš„ä¸º1å·è¡¨ï¼ŒUVåˆ†é‡
 	write16(2 + 1 + 16 + uv_ac_symbol_num, ofs);
 	write({ 0x11 }, ofs);
 	write_huffman_table(uv_ac_each_uint8_t_huffman_code, ofs);
 
 
-	write_marker(0xDA,ofs);  //ĞĞÉ¨Ãè¿ªÊ¼
+	write_marker(0xDA,ofs);  //è¡Œæ‰«æå¼€å§‹
 	write16(12, ofs);
 	write({3},ofs);
-	write({0,0x00}, ofs);//Y, 0xÖ±Á÷·ÖÁ¿Ê¹ÓÃµÄ¹ş·òÂüÊ÷±àºÅ+½»Á÷·ÖÁ¿Ê¹ÓÃµÄ¹ş·òÂüÊ÷±àºÅ
-	write({1,0x11}, ofs);  //U,ÑÕÉ«·ÖÁ¿ID¿ÉÒÔÊÇ0¡¢1¡¢2
+	write({0,0x00}, ofs);//Y, 0xç›´æµåˆ†é‡ä½¿ç”¨çš„å“ˆå¤«æ›¼æ ‘ç¼–å·+äº¤æµåˆ†é‡ä½¿ç”¨çš„å“ˆå¤«æ›¼æ ‘ç¼–å·
+	write({1,0x11}, ofs);  //U,é¢œè‰²åˆ†é‡IDå¯ä»¥æ˜¯0ã€1ã€2
 	write({2,0x11}, ofs); //V
 	write({ 0x00, 0x3F, 0x00 }, ofs);
 
-	//Ö®ºóÎªÕæÕıµÄÍ¼ÏñĞÅÏ¢
-	//ÓÉÓÚY¡¢U¡¢VË®Æ½²ÉÑùÒò×Ó·Ö±ğÎª2¡¢1¡¢1£¬´¹Ö±²ÉÑùÒò×Ó·Ö±ğÎª2¡¢1¡¢1£¬Òò´ËÒ»¸ö×î
-	//Ğ¡±àÂëµ¥ÔªMCU¶ÔÓ¦16*16ÏñËØ¿é£¬¼´4¸ö8*8ÏñËØ¿é¡£Ò»¸öMCU°üÀ¨ËÄ¸öYDU¡¢1¸öUDU
-	//ºÍÒ»¸öVDU£¬Êı¾İÁ÷×éÖ¯ĞÎÊ½ÎªYDU,YDU,YDU,YDU,UDU,VDU
+	//ä¹‹åä¸ºçœŸæ­£çš„å›¾åƒä¿¡æ¯
+	//ç”±äºYã€Uã€Væ°´å¹³é‡‡æ ·å› å­åˆ†åˆ«ä¸º2ã€1ã€1ï¼Œå‚ç›´é‡‡æ ·å› å­åˆ†åˆ«ä¸º2ã€1ã€1ï¼Œå› æ­¤ä¸€ä¸ªæœ€
+	//å°ç¼–ç å•å…ƒMCUå¯¹åº”16*16åƒç´ å—ï¼Œå³4ä¸ª8*8åƒç´ å—ã€‚ä¸€ä¸ªMCUåŒ…æ‹¬å››ä¸ªYDUã€1ä¸ªUDU
+	//å’Œä¸€ä¸ªVDUï¼Œæ•°æ®æµç»„ç»‡å½¢å¼ä¸ºYDU,YDU,YDU,YDU,UDU,VDU
 	const int ydu_num = (height / 8)*(width / 8);
 	const int udu_num= (height /2/ 8)*(width/2 / 8);
 	const int vdu_num = (height / 2 / 8)*(width / 2 / 8);
@@ -1497,8 +1494,8 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 	assert(uv_dc_group_code.size() == (udu_num+vdu_num));
 	for (int i = 0; i < mcu_num; i++)
 	{
-		//µÚiºÅMCU°üº¬µÄYDUµÄË÷ÒıÎªidx[4]£¬°üº¬µÄUDUµÄË÷ÒıÎªi
-		//Ğ´YDU,YDU,YDU,YDU
+		//ç¬¬iå·MCUåŒ…å«çš„YDUçš„ç´¢å¼•ä¸ºidx[4]ï¼ŒåŒ…å«çš„UDUçš„ç´¢å¼•ä¸ºi
+		//å†™YDU,YDU,YDU,YDU
 		const int mcu_num_per_row = width / 16;
 		int mcu_num_per_col = height / 16;
 		const int r = i/mcu_num_per_row;
@@ -1510,7 +1507,7 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 		idx[3] = idx[2] + 1;
 
 		cout << endl << "********************************************" << endl;
-		cout << i << "ºÅMCUµÄËÄ¸öBlockµÄË÷ÒıÊÇ:" ;
+		cout << i << "å·MCUçš„å››ä¸ªBlockçš„ç´¢å¼•æ˜¯:" ;
 		for (auto i : idx)cout << i << "  ";
 		cout << endl << "*********************************************" << endl << endl;
 
@@ -1521,25 +1518,25 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 		}
 
 
-		cout << endl << "-------Ğ´UDU-------------" << endl << endl;
-		//Ğ´UDU
+		cout << endl << "-------å†™UDU-------------" << endl << endl;
+		//å†™UDU
 		write_a_block(uv_dc_group_code[i], uv_dc_each_uint8_t_huffman_code,
 			uv_ac_symbol_bitnums_groupcode[i], uv_ac_each_uint8_t_huffman_code, ofs);
-		cout << endl << "-------Ğ´VDU-------------" << endl << endl;
-		//Ğ´VDU  
+		cout << endl << "-------å†™VDU-------------" << endl << endl;
+		//å†™VDU  
 		int v_idx = i + uv_dc_group_code.size() / 2;
 		write_a_block(uv_dc_group_code[v_idx], uv_dc_each_uint8_t_huffman_code,
 			uv_ac_symbol_bitnums_groupcode[v_idx], uv_ac_each_uint8_t_huffman_code, ofs);
 	}
 
-	//Ìî³ä1
+	//å¡«å……1
 	if (off != 0)
 	{
-		cout << "Ä©Î²Ìî³ä" << 8 - off << "¸ö1" << endl;
+		cout << "æœ«å°¾å¡«å……" << 8 - off << "ä¸ª1" << endl;
 		write_bits(0xFF,8-off,ofs);
 	}
 
-	write_marker(0xD9,ofs);  //EOI(End of Image) Í¼Ïñ½áÊø±ê¼Ç
+	write_marker(0xD9,ofs);  //EOI(End of Image) å›¾åƒç»“æŸæ ‡è®°
 }
 
 int main()
@@ -1582,14 +1579,9 @@ int main()
 		data[3*i + 2] = i;
 	}
 #endif
-	Mat src(height,width,CV_8UC3);
-	memcpy_s(src.data, height *width * 3, data,height *width * 3);
-	//cv::imshow("src", src); waitKey(0);
-	vector<int> compression_params;
-	compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);  //Ñ¡Ôñjpeg
-	compression_params.push_back(100); //ÔÚÕâ¸öÌîÈëÄãÒªµÄÍ¼Æ¬ÖÊÁ¿
-	cv::imwrite("C:/Users/myth/Desktop/src.jpg",src, compression_params);
 	vector<uint8_t> rgbdata(height *width * 3);
 	memcpy_s(&rgbdata[0], height *width * 3, data, height *width * 3);
-	avjpeg(rgbdata, src.cols, src.rows, "C:/Users/myth/Desktop/test.jpg");
+	const char *output = "./test.jpg";
+	avjpeg(rgbdata, width, height, output);
+	cout << "å®Œæˆç¼–ç ï¼Œè¾“å‡ºä¿å­˜åœ¨" << output << endl;
 }
