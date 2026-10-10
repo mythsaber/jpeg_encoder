@@ -87,26 +87,45 @@ vector<std::pair<int,uint16_t>> canonical_huffman_encode(const vector<int>& dept
 {
 	if (depth.empty()) return vector<std::pair<int, uint16_t>>();
 
-	//std::tuple<在初始frequency中的索引、编码长度、编码（16位整数的低n位)
-	vector<std::tuple<int, int, uint16_t>> idx_len_code(depth.size());
-	for (unsigned i = 0; i < depth.size(); i++)
-	{
-		std::get<0>(idx_len_code[i]) = i; //std::get<>()返回引用
-		std::get<1>(idx_len_code[i]) = depth[i];
-		std::get<2>(idx_len_code[i]) = 0;
-	}
+	vector<int> len(depth); //码长可能被调整，故拷贝一份
 
-	//按编码长度由小到大排列
-	std::sort(idx_len_code.begin(), idx_len_code.end(), 
-		[](const std::tuple<int, int, uint16_t>& lhs, const std::tuple<int, int, uint16_t>& rhs)->bool
+	//std::tuple<在初始frequency中的索引、编码长度、编码（16位整数的低n位)
+	vector<std::tuple<int, int, uint16_t>> idx_len_code(len.size());
+
+	for (int attempt = 0; ; attempt++)
 	{
-		return std::get<1>(lhs) < std::get<1>(rhs);
-	});
-	std::get<2>(idx_len_code[0]) = 0;
-	for (unsigned i= 1; i <  idx_len_code.size(); i++)
-	{
-		int steps = std::get<1>(idx_len_code[i]) - std::get<1>(idx_len_code[i-1]);
-		std::get<2>(idx_len_code[i]) = (std::get<2>(idx_len_code[i - 1]) + 1) << steps;
+		for (unsigned i = 0; i < len.size(); i++)
+		{
+			std::get<0>(idx_len_code[i]) = i; //std::get<>()返回引用
+			std::get<1>(idx_len_code[i]) = len[i];
+			std::get<2>(idx_len_code[i]) = 0;
+		}
+
+		//按编码长度由小到大排列(stable保证等长时的相对次序确定)
+		std::stable_sort(idx_len_code.begin(), idx_len_code.end(),
+			[](const std::tuple<int, int, uint16_t>& lhs, const std::tuple<int, int, uint16_t>& rhs)->bool
+		{
+			return std::get<1>(lhs) < std::get<1>(rhs);
+		});
+		std::get<2>(idx_len_code[0]) = 0;
+		for (unsigned i= 1; i <  idx_len_code.size(); i++)
+		{
+			int steps = std::get<1>(idx_len_code[i]) - std::get<1>(idx_len_code[i-1]);
+			std::get<2>(idx_len_code[i]) = (std::get<2>(idx_len_code[i - 1]) + 1) << steps;
+		}
+
+		/*
+		T.81规定不能使用全1的码字：解码器读到全1只能当作末尾的比特填充，
+		否则最后那个字节的填充会被误认成码字。规范编码的码字单调递增，
+		所以只有最后一个（也是最大的）码字有可能全为1，把它加长1位后
+		重新分配即可(加长只会让Kraft不等式更容易满足)。
+		*/
+		int last_len = std::get<1>(idx_len_code.back());
+		bool all_ones = last_len < 16 &&
+			std::get<2>(idx_len_code.back()) == (uint16_t)((1u << last_len) - 1);
+		if (!all_ones || attempt >= 16) break;
+
+		len[std::get<0>(idx_len_code.back())]++;
 	}
 
 	//返回与初始输入的frequency对应的vetcor<pair<编码长度n，编码（16位整数的低n位>>
@@ -1497,9 +1516,8 @@ void avjpeg(vector<uint8_t>& rgbdata, int width, int height, const char* dst_pat
 		//第i号MCU包含的YDU的索引为idx[4]，包含的UDU的索引为i
 		//写YDU,YDU,YDU,YDU
 		const int mcu_num_per_row = width / 16;
-		int mcu_num_per_col = height / 16;
 		const int r = i/mcu_num_per_row;
-		const int c = i%mcu_num_per_col;
+		const int c = i%mcu_num_per_row;
 		int idx[4];
 		idx[0] = r*mcu_num_per_row * 4 + c * 2;
 		idx[1] = idx[0] + 1;
